@@ -26,15 +26,17 @@ class QuestionController extends Controller
             'question_text' => 'required|string',
             'answers' => 'required|array|min:2',
             'answers.*.text' => 'required|string',
-            'correct_answer' => 'required|integer',
+            'correct_answers' => 'required|array|min:1',
+        ], [
+            'correct_answers.required' => 'Vui lòng chọn ít nhất một đáp án đúng.'
         ]);
 
         $question = Question::create(['question_text' => $request->question_text]);
 
-        foreach ($request->answers as $index => $answerData) {
+        foreach ($request->answers as $key => $answerData) {
             $question->answers()->create([
                 'answer_text' => $answerData['text'],
-                'is_correct' => $index == $request->correct_answer,
+                'is_correct' => in_array($key, $request->correct_answers),
             ]);
         }
 
@@ -53,17 +55,19 @@ class QuestionController extends Controller
             'question_text' => 'required|string',
             'answers' => 'required|array|min:2',
             'answers.*.text' => 'required|string',
-            'correct_answer' => 'required|integer',
+            'correct_answers' => 'required|array|min:1',
+        ], [
+            'correct_answers.required' => 'Vui lòng chọn ít nhất một đáp án đúng.'
         ]);
 
         $question->update(['question_text' => $request->question_text]);
 
         $question->answers()->delete();
 
-        foreach ($request->answers as $index => $answerData) {
+        foreach ($request->answers as $key => $answerData) {
             $question->answers()->create([
                 'answer_text' => $answerData['text'],
-                'is_correct' => $index == $request->correct_answer,
+                'is_correct' => in_array($key, $request->correct_answers),
             ]);
         }
 

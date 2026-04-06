@@ -10,55 +10,64 @@ use Illuminate\Support\Facades\Session;
 
 class QuizController extends Controller
 {
-public function index()
-{
-    if (!Session::has('quiz_start_time')) {
-        Session::put('quiz_start_time', now());  // Lưu đối tượng Carbon/DateTime
-    }
-
-    $questions = Question::with('answers')->inRandomOrder()->take(50)->get();
-
-    return view('quiz', compact('questions'));
-}
-public function submit(Request $request)
-{
-    $startTime = Session::get('quiz_start_time');
-
-    // Tính thời gian an toàn
-    $timeTakenSeconds = 0;
-    if ($startTime instanceof \Carbon\Carbon) {
-        $timeTakenSeconds = $startTime->diffInSeconds(now());
-    }
-
-    if ($timeTakenSeconds < 0) {
-        $timeTakenSeconds = 0;  // Fix trường hợp âm (ít xảy ra)
-    }
-
-    // Debug (xóa sau khi test xong)
-    // dd($startTime, now(), $timeTakenSeconds);
-
-    $score = 0;
-    $total = 50;
-
-    foreach ($request->all() as $key => $value) {
-        if (str_starts_with($key, 'question_')) {
-            $questionId = str_replace('question_', '', $key);
-            $correctId = Question::find($questionId)->answers()->where('is_correct', true)->first()->id ?? null;
-            if ($value == $correctId) $score++;
+    public function index()
+    {
+        if (!Session::has('quiz_start_time')) {
+            Session::put('quiz_start_time', now());
         }
+
+        $questions = Question::with('answers')->inRandomOrder()->take(50)->get();
+
+        Session::put('quiz_question_ids', $questions->pluck('id')->toArray());
+
+        return view('quiz', compact('questions'));
     }
 
-    $result = Result::create([
-        'user_id'    => Auth::id(),
-        'score'      => $score,
-        'total'      => $total,
-        'time_taken' => $timeTakenSeconds,
-    ]);
+        public function submit(Request $request)
+        {
+            $startTime = Session::get('quiz_start_time');
+            $questionIdsToScore = Session::get('quiz_question_ids', []);
 
-    Session::forget('quiz_start_time');
+            $timeTakenSeconds = 0;
+            if ($startTime instanceof \Carbon\Carbon) {
+                $timeTakenSeconds = $startTime->diffInSeconds(now());
+            }
+            if ($timeTakenSeconds < 0) {
+                $timeTakenSeconds = 0;
+            }
 
-    return redirect()->route('quiz.result', $result->id);
-}
+            $questions = Question::with('answers')->whereIn('id', $questionIdsToScore)->get();
+            
+            $score = 0;
+            $total = count($questionIdsToScore) > 0 ? count($questionIdsToScore) : 50;
+
+            foreach ($questions as $question) {
+                $correctAnswerIds = $question->answers->where('is_correct', true)->pluck('id')->map(fn($id) => (string)$id)->sort()->values()->toArray();
+                
+                $userAnswers = $request->input('question_' . $question->id);
+                if (!is_array($userAnswers)) {
+                    $userAnswers = $userAnswers ? [(string)$userAnswers] : [];
+                } else {
+                    $userAnswers = collect($userAnswers)->map(fn($id) => (string)$id)->sort()->values()->toArray();
+                }
+
+                if (!empty($correctAnswerIds) && $correctAnswerIds === $userAnswers) {
+                    $score++;
+                }
+            }
+
+            $result = Result::create([
+                'user_id'    => Auth::id(),
+                'score'      => $score,
+                'total'      => $total,
+                'time_taken' => $timeTakenSeconds,
+            ]);
+
+            Session::forget('quiz_start_time');
+            Session::forget('quiz_question_ids');
+
+            return redirect()->route('quiz.result', $result->id);
+        }
 
     public function showResult($id)
     {
