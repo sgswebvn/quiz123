@@ -9,7 +9,8 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-            QuestionSeeder::class,  // Gọi seeder tạo câu hỏi
+            QuestionSeeder::class,
+            AdminSeeder::class,  // Gọi seeder tạo câu hỏi
         ]);
     }
 }
