@@ -36,6 +36,12 @@
                                 {{ __('Trang cá nhân') }}
                             </x-dropdown-link>
 
+                            @if(Auth::user()->is_admin)
+                                <x-dropdown-link :href="route('admin.dashboard')">
+                                    {{ __('Admin Dashboard') }}
+                                </x-dropdown-link>
+                            @endif
+
                             <!-- Authentication -->
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
@@ -96,6 +102,12 @@
                     <x-responsive-nav-link :href="route('profile.edit')">
                         {{ __('Profile') }}
                     </x-responsive-nav-link>
+
+                    @if(Auth::user()->is_admin)
+                        <x-responsive-nav-link :href="route('admin.dashboard')">
+                            {{ __('Admin Dashboard') }}
+                        </x-responsive-nav-link>
+                    @endif
 
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf

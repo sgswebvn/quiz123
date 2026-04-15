@@ -74,9 +74,9 @@ class QuestionController extends Controller
         return redirect()->route('admin.questions.index')->with('success', 'Câu hỏi đã được cập nhật!');
     }
 
-    public function destroy(Question $question)
-    {
-        $question->delete();
-        return redirect()->route('admin.questions.index')->with('success', 'Đã xoá câu hỏi!');
-    }
+        public function destroy(Question $question)
+        {
+            $question->delete();
+            return redirect()->route('admin.questions.index')->with('success', 'Đã xoá câu hỏi!');
+        }
 }
