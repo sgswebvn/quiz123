@@ -94,7 +94,7 @@ class QuizController extends Controller
 
             return redirect()->route('quiz.result', $result->id);
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('Quiz Submit Error: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
                 'user_id' => Auth::id()
